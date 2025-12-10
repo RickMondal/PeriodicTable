@@ -85,12 +85,20 @@ const pickPalette = (category: string): Palette => {
   return defaultPalette;
 };
 
+type LayoutState = {
+  tile: number;
+  gap: number;
+  padding: number;
+  containerWidth: number;
+};
+
 const PeriodicTable = () => {
   const [elements, setElements] = useState<Element[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeElement, setActiveElement] = useState<Element | null>(null);
   const [activeIsotope, setActiveIsotope] = useState<Isotope | null>(null);
+  const [layout, setLayout] = useState<LayoutState>({ tile: 96, gap: 12, padding: 32, containerWidth: 0 });
 
   useEffect(() => {
     const load = async () => {
@@ -108,6 +116,67 @@ const PeriodicTable = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const calculateLayout = () => {
+      const width = window.innerWidth;
+      const margin = width >= 1680 ? 140 : width >= 1440 ? 120 : width >= 1280 ? 108 : width >= 1024 ? 84 : width >= 768 ? 56 : 36;
+      const gap = width >= 1536 ? 14 : width >= 1280 ? 12 : width >= 1024 ? 10 : width >= 640 ? 8 : 6;
+      const padding = width >= 1536 ? 44 : width >= 1280 ? 38 : width >= 1024 ? 32 : width >= 768 ? 26 : 20;
+      const minTile = width < 640 ? 60 : width < 1024 ? 72 : 84;
+      const maxTile = width >= 1700 ? 134 : width >= 1440 ? 126 : width >= 1280 ? 118 : width >= 1024 ? 108 : width >= 768 ? 98 : 90;
+      const maxContainer = Math.max(width - 24, width - margin);
+      const availableGrid = Math.max(maxContainer - padding * 2, width * 0.7);
+      const candidate = (availableGrid - gap * 17) / 18;
+      let tile = Math.round(Math.max(Math.min(candidate, maxTile), Math.min(candidate, minTile)));
+
+      if (!Number.isFinite(tile) || tile <= 0) {
+        tile = Math.max(Math.floor((maxContainer - padding * 2 - gap * 17) / 18), 6);
+      }
+
+      let gridWidth = tile * 18 + gap * 17;
+      if (gridWidth + padding * 2 > maxContainer) {
+        const adjustedTile = Math.floor((maxContainer - padding * 2 - gap * 17) / 18);
+        tile = Math.max(1, Math.min(tile, adjustedTile));
+        gridWidth = tile * 18 + gap * 17;
+      }
+
+      const containerWidth = Math.min(gridWidth + padding * 2, maxContainer);
+
+      setLayout({ tile, gap, padding, containerWidth });
+    };
+
+    calculateLayout();
+    window.addEventListener("resize", calculateLayout);
+    return () => window.removeEventListener("resize", calculateLayout);
+  }, []);
+
+  const typography = useMemo(() => {
+    if (layout.tile <= 60) {
+      const rawSymbol = Math.max(layout.tile * 0.52, 11);
+      const rawLabel = Math.max(layout.tile * 0.22, 7);
+      const rawNumber = Math.max(layout.tile * 0.2, 7);
+      return {
+        symbol: Math.min(rawSymbol, Math.max(layout.tile - 6, 8)),
+        label: Math.min(rawLabel, Math.max(layout.tile - 10, 6)),
+        number: Math.min(rawNumber, Math.max(layout.tile - 12, 6)),
+      };
+    }
+
+    const rawSymbol = Math.min(44, layout.tile * 0.36);
+    const rawLabel = Math.min(16, layout.tile * 0.19);
+    const rawNumber = Math.min(14, layout.tile * 0.16);
+
+    return {
+      symbol: Math.min(rawSymbol, Math.max(layout.tile - 6, rawSymbol)),
+      label: Math.min(rawLabel, Math.max(layout.tile - 12, rawLabel)),
+      number: Math.min(rawNumber, Math.max(layout.tile - 14, rawNumber)),
+    };
+  }, [layout.tile]);
+
   const tableGrid = useMemo(
     () =>
       elements.map((element) => ({
@@ -118,28 +187,43 @@ const PeriodicTable = () => {
   );
 
   return (
-    <section className="space-y-12">
-      <header className="space-y-4 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-slate-700 shadow-lg shadow-slate-900/10 backdrop-blur">
+    <section className="space-y-8">
+      <header className="space-y-3 text-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3.5 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-slate-700 shadow-lg shadow-slate-900/10 backdrop-blur">
           Quantum Tableau
         </span>
-        <div className="mx-auto max-w-5xl space-y-4">
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900 drop-shadow-sm md:text-5xl">
+        <div className="mx-auto max-w-4xl space-y-3">
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900 drop-shadow-sm md:text-[2.9rem]">
             Interactive Periodic Table Explorer
           </h1>
-          <p className="text-base text-slate-600 md:text-lg">
+          <p className="text-sm text-slate-600 md:text-base">
             Touch an element tile to reveal animated isotopes, live Bohr orbitals, and a playful quantum arena filled with
             subatomic detail.
           </p>
         </div>
       </header>
 
-      <div className="rounded-[38px] border border-white/60 bg-white/80 p-6 backdrop-blur shadow-2xl shadow-slate-900/10 sm:p-8 lg:p-10">
+      <div
+        className="mx-auto w-full rounded-[34px] border border-white/60 bg-white/80 backdrop-blur shadow-2xl shadow-slate-900/10"
+        style={{
+          width: layout.containerWidth ? layout.containerWidth : undefined,
+          padding: `${layout.padding}px`,
+        }}
+      >
         {loading && <LoadingState />}
         {error && <ErrorState message={error} />}
         {!loading && !error && (
-          <div className="-mx-2 overflow-x-auto pb-4">
-            <div className="mx-2 grid min-w-[1120px] grid-cols-18 gap-2 sm:gap-2.5 lg:gap-3">
+          <div className="pb-1">
+            <div
+              style={{
+                display: "grid",
+                justifyContent: "center",
+                gridTemplateColumns: `repeat(18, ${layout.tile}px)`,
+                gridAutoRows: `${layout.tile}px`,
+                columnGap: layout.gap,
+                rowGap: layout.gap,
+              }}
+            >
               {tableGrid.map(({ element, palette }) => (
                 <button
                   key={element.symbol}
@@ -153,14 +237,26 @@ const PeriodicTable = () => {
                     gridRow: element.period,
                     background: `linear-gradient(135deg, ${palette.gradient[0]}, ${palette.gradient[1]}, ${palette.gradient[2]})`,
                     boxShadow: `0 18px 35px -15px ${palette.shadow}`,
+                    height: layout.tile,
                   }}
-                  className="group relative flex h-28 flex-col overflow-hidden rounded-[26px] border border-white/40 p-4 text-left shadow-lg transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-900/80 hover:-translate-y-1 md:h-32 md:p-5"
+                  className="group relative flex flex-col overflow-hidden rounded-[26px] border border-white/40 px-3 py-2 text-left shadow-lg transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-900/80 hover:-translate-y-1 sm:px-3.5 sm:py-2.5 lg:px-4 lg:py-3"
                 >
-                  <span className="text-xs font-semibold text-slate-900/70">{element.atomicNumber}</span>
-                  <span className="text-3xl font-semibold tracking-tight text-slate-900 drop-shadow-sm md:text-4xl">
+                  <span
+                    className="font-semibold text-slate-900/70"
+                    style={{ fontSize: typography.number, lineHeight: 1.1 }}
+                  >
+                    {element.atomicNumber}
+                  </span>
+                  <span
+                    className="font-semibold tracking-tight text-slate-900 drop-shadow-sm"
+                    style={{ fontSize: typography.symbol, lineHeight: 1.05 }}
+                  >
                     {element.symbol}
                   </span>
-                  <span className="mt-auto text-xs font-medium uppercase tracking-wider text-slate-900/70">
+                  <span
+                    className="mt-auto font-medium uppercase tracking-wider text-slate-900/70"
+                    style={{ fontSize: typography.label, letterSpacing: "0.14em" }}
+                  >
                     {element.name}
                   </span>
                   <span
@@ -229,8 +325,14 @@ type ElementModalProps = {
 };
 
 const ElementModal = ({ element, isotope, palette, onSelectIsotope, onClose }: ElementModalProps) => (
-  <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/55 p-4 backdrop-blur-sm sm:p-6">
-    <div className="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-[38px] border border-white/60 bg-slate-950 text-slate-100 shadow-2xl">
+  <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/55 p-3 backdrop-blur-sm sm:p-4 md:p-6">
+    <div
+      className="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-[38px] border border-white/60 bg-slate-950 text-slate-100 shadow-2xl"
+      style={{
+        maxHeight: "calc(100vh - 2.5rem)",
+        maxWidth: "min(1200px, calc(100vw - 1.5rem))",
+      }}
+    >
       <div
         className="h-1.5 flex-shrink-0"
         style={{ background: `linear-gradient(90deg, ${palette.gradient[0]}, ${palette.gradient[1]}, ${palette.gradient[2]})` }}
