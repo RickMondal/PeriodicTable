@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Express API",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "server:dev"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Next.js Dev Server",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Launch Periodic Table",
+      "dependsOn": ["Run Express API", "Run Next.js Dev Server"],
+      "dependsOrder": "parallel",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

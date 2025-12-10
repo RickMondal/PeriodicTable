@@ -20,7 +20,173 @@
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 20%, #e0f2fe 0%, #f8fafc 35%, #e0e7ff 65%, #fdf2f8 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.bohr-shell {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px dashed rgba(94, 234, 212, 0.45);
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  animation-name: orbit-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.bohr-electron {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #67e8f9;
+  box-shadow: 0 0 18px rgba(6, 182, 212, 0.4);
+}
+
+.quantum-perspective {
+  perspective: 1200px;
+}
+
+.quantum-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 420px;
+  height: 420px;
+  transform: translate(-50%, -50%);
+  transform-style: preserve-3d;
+  animation: stage-rotate 26s linear infinite;
+}
+
+.quantum-nucleus {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  border-radius: 9999px;
+  transform: translate3d(-50%, -50%, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  animation: nucleus-pulse 6s ease-in-out infinite;
+}
+
+.nucleus-particle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  opacity: 0.85;
+  animation: nucleus-drift 5.4s ease-in-out infinite;
+}
+
+.quantum-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotateX(18deg);
+  border: 1px solid rgba(94, 234, 212, 0.18);
+  border-radius: 9999px;
+  transform-style: preserve-3d;
+  animation-name: orbit-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.quantum-electron {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #22d3ee, #a855f7);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.45);
+}
+
+.quantum-cloud {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: cloud-waver 18s ease-in-out infinite;
+}
+
+.quantum-cloud-particle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  opacity: 0.35;
+  animation: particle-drift 12s linear infinite;
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: translate(-50%, -50%) rotateX(18deg) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotateX(18deg) rotate(360deg);
+  }
+}
+
+@keyframes stage-rotate {
+  from {
+    transform: translate(-50%, -50%) rotateX(18deg) rotateY(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotateX(18deg) rotateY(360deg);
+  }
+}
+
+@keyframes nucleus-pulse {
+  0%,
+  100% {
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-50%, -50%, 0) scale(1.06);
+  }
+}
+
+@keyframes nucleus-drift {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes cloud-waver {
+  0%,
+  100% {
+    transform: scale(1) rotateZ(0deg);
+  }
+  50% {
+    transform: scale(1.04) rotateZ(4deg);
+  }
+}
+
+@keyframes particle-drift {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
